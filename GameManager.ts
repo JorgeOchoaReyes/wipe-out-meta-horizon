@@ -1,19 +1,34 @@
-import * as hz from 'horizon/core';
-import { Entity } from 'horizon/core';
+import * as hz from 'horizon/core'; 
+
+export const playerCheckpoints = new hz.LocalEvent<Map<hz.Player, hz.SpawnPointGizmo>>('playerCheckpoints');
+export const setPlayerCheckpoints = new hz.LocalEvent<Map<hz.Player, hz.SpawnPointGizmo>>('setPlayerCheckpoints');
 
 class GameManager extends hz.Component<typeof GameManager> {
-  static propsDefinition = {
-    backgroundMusic: { type: hz.PropTypes.Entity },
-    checkpoint: { type: hz.PropTypes.Entity },
+  static propsDefinition = { 
+    checkpoint1: { type: hz.PropTypes.Entity },
+    checkpoint2: { type: hz.PropTypes.Entity },
+    checkpoint3: { type: hz.PropTypes.Entity },
+    checkpoint4: { type: hz.PropTypes.Entity },
+    checkpoint5: { type: hz.PropTypes.Entity },
   };
 
+  private playerCheckpoints: Map<hz.Player, hz.SpawnPointGizmo> = new Map();
+
   start() {
+    
+    this.connectLocalBroadcastEvent(setPlayerCheckpoints, (data) => { 
+      this.playerCheckpoints = data;
+    }); 
+
     this.connectCodeBlockEvent(this.entity, hz.CodeBlockEvents.OnPlayerEnterWorld, (player: hz.Player) => {
-      const backgroundMusicGizmo = this.props.backgroundMusic!.as(hz.AudioGizmo)!;
-      backgroundMusicGizmo.play({ fade: 0, players: [player] });
-      backgroundMusicGizmo.volume.set(0.5); // Optional: Set the volume to 50%
-      // how to loop? 
-    });
+      this.setPlayerCheckpoint(player, this.props.checkpoint1?.as(hz.SpawnPointGizmo)!);
+    }); 
   }
+
+  setPlayerCheckpoint(player: hz.Player, checkpoint: hz.SpawnPointGizmo) {
+    this.playerCheckpoints.set(player, checkpoint);
+    this.sendLocalBroadcastEvent(playerCheckpoints, this.playerCheckpoints);
+  }
+  
 }
 hz.Component.register(GameManager); 
