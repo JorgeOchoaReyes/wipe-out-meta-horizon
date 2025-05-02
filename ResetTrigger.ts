@@ -4,6 +4,7 @@ import { playerCheckpoints, setPlayerCheckpoints } from 'GameManager';
 class ResetTrigger extends hz.Component<typeof ResetTrigger> {
   static propsDefinition = {
     spawnPoint: { type: hz.PropTypes.Entity },
+    deathSfx: { type: hz.PropTypes.Entity },
   };
 
   private playerCheckpoints: Map<number, hz.SpawnPointGizmo> = new Map();
@@ -12,10 +13,10 @@ class ResetTrigger extends hz.Component<typeof ResetTrigger> {
     this.connectCodeBlockEvent(this.entity, hz.CodeBlockEvents.OnPlayerEnterTrigger, (player: hz.Player) => {
       this.onPlayerEnter(player);
     });
-    this.connectLocalBroadcastEvent(playerCheckpoints, (data) => {
+    this.connectLocalBroadcastEvent(playerCheckpoints, (data) => { 
       this.playerCheckpoints = data;
     });
-    this.connectLocalBroadcastEvent(setPlayerCheckpoints, (data) => {
+    this.connectLocalBroadcastEvent(setPlayerCheckpoints, (data) => { 
       this.playerCheckpoints = data;
     });
   }
@@ -24,9 +25,20 @@ class ResetTrigger extends hz.Component<typeof ResetTrigger> {
     if (!spawnPoint) {
       console.log("No spawn point found for player", player);
       return;
-    } 
-    console.log("Resetting player to spawn point", player.id, spawnPoint, this.playerCheckpoints);
-    spawnPoint.teleportPlayer(player) 
+    }  
+    try {
+      const sound = this.props.deathSfx?.as(hz.AudioGizmo);
+      if (sound) {
+        sound.play({
+          fade: 0,
+          players: [player],
+        });
+      }
+      spawnPoint.teleportPlayer(player);
+    } catch (error) {
+      console.error("Error teleporting player:", error);
+    }
+    
   }
 
 }

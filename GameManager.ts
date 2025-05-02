@@ -21,6 +21,7 @@ class GameManager extends hz.Component<typeof GameManager> {
   }
 
   setPlayerCheckpoint(player: hz.Player, checkpoint: hz.SpawnPointGizmo) {
+    console.log("Setting player checkpoint", player.id, checkpoint);
     this.playerCheckpoints.set(player.id, checkpoint); 
     this.sendLocalBroadcastEvent(playerCheckpoints, this.playerCheckpoints);
   }
