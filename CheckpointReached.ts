@@ -21,9 +21,17 @@ class CheckpointReached extends hz.Component<typeof CheckpointReached> {
   }
   onPlayerEnter(player: hz.Player) { 
     if (this.props.checkpoint) {
+      const sound = this.props.soundFx?.as(hz.AudioGizmo);
+      if (sound && this.props.checkpoint?.as(hz.SpawnPointGizmo).id !== this.playerCheckpoints.get(player.id)?.id) {
+        sound.play({
+          fade: 0,
+          players: [player],
+        });
+      }
       const checkpoint = this.props.checkpoint?.as(hz.SpawnPointGizmo)!;
       this.playerCheckpoints.set(player.id, checkpoint);
       this.sendLocalBroadcastEvent(playerCheckpoints, this.playerCheckpoints); 
+     
     }
   }
 }

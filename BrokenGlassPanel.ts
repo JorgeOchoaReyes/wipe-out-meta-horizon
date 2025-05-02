@@ -41,16 +41,17 @@ class BrokenGlassPanel extends hz.Component<typeof BrokenGlassPanel> {
     }); 
 
     this.connectCodeBlockEvent(this.entity, hz.CodeBlockEvents.OnPlayerEnterTrigger, (_p) => { 
-      this.onPlayerLanded(this.shouldIBreak);
+      this.onPlayerLanded(this.shouldIBreak, _p);
     });
   } 
 
-  onPlayerLanded(broken: boolean) {  
+  onPlayerLanded(broken: boolean, player: hz.Player) {  
     if(!broken) { 
       const glassSound = this.glassBreakSound!.as(hz.AudioGizmo)!;
       this.panel.visible.set(false);
       glassSound.play({
-        fade: 1
+        fade: 1,
+        players: [player],
       });
     } 
   }
