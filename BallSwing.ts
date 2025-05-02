@@ -1,38 +1,47 @@
 import * as hz from 'horizon/core';
+import { PropTypes } from 'horizon/core';
+import { Quaternion, Vec3, World } from 'horizon/core';
 
 class BallSwing extends hz.Component<typeof BallSwing> {
   static propsDefinition = {
-    chainLength: { type: hz.PropTypes.Number, default: 5 },
-    ballMass: { type: hz.PropTypes.Number, default: 10 },
+    minAngle: { type: PropTypes.Number, default: -45 },
+    maxAngle: { type: PropTypes.Number, default: 45 },
+    swingSpeed: { type: PropTypes.Number, default: 1 },
+    initialAngle: { type: PropTypes.Number, default: 0 },
   };
 
-  private ballEntity!: hz.PhysicalEntity;
-  private chainEntity!: hz.Entity;
+  private angle!: number;
+  private direction!: number;
 
   start() {
-    this.ballEntity = this.entity.children.get()[0].as(hz.PhysicalEntity);
-    this.chainEntity = this.entity.children.get()[1];
+    this.angle = this.props.initialAngle!;
+    this.direction = 1;
+    this.updateRotation();
 
-    this.ballEntity.gravityEnabled.set(true);
-    // Removed setting mass as it's not a valid property
-
-    this.chainEntity.as(hz.PhysicalEntity).gravityEnabled.set(true);
-    this.chainEntity.as(hz.PhysicalEntity).locked.set(false);
-
-    this.connectLocalBroadcastEvent(hz.World.onUpdate, this.onUpdate.bind(this));
+    this.connectLocalBroadcastEvent(World.onUpdate, (data: { deltaTime: number }) => {
+      this.update(data.deltaTime);
+    });
   }
 
-  onUpdate(data: { deltaTime: number }) {
-    const ballPosition = this.ballEntity.position.get();
-    const chainPosition = this.chainEntity.position.get();
-    const distance = ballPosition.distance(chainPosition);
+  update(deltaTime: number) {
+    this.angle += this.props.swingSpeed! * this.direction * deltaTime;
 
-    if (distance > this.props.chainLength!) {
-      const direction = chainPosition.sub(ballPosition).normalize();
-      const force = direction.mul(this.props.chainLength! - distance);
-      this.ballEntity.applyForce(force, hz.PhysicsForceMode.Force);
+    if (this.angle > this.props.maxAngle!) {
+      this.angle = this.props.maxAngle!;
+      this.direction = -1;
+    } else if (this.angle < this.props.minAngle!) {
+      this.angle = this.props.minAngle!;
+      this.direction = 1;
     }
+
+    this.updateRotation();
+  }
+
+  updateRotation() {
+    const rotation = Quaternion.fromEuler(new Vec3(0, this.angle, 0));
+    this.entity.rotation.set(rotation);
   }
 }
+
 hz.Component.register(BallSwing);
  

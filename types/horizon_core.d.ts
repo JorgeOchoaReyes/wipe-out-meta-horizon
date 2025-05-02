@@ -170,23 +170,18 @@ export interface WritableHorizonProperty<T, U = never> {
     set(value: T, ...values: [U?]): void;
 }
 /**
- * Represents a readable property, where reads are cached per frame, in Horizon Worlds.
+ * Represents the base functionality for a property in Horizon Worlds.
  */
-export declare class CachedReadableHorizonProperty<T> implements ReadableHorizonProperty<T> {
-    private getter;
-    private _lastFrameFetched;
+declare class BaseHorizonProperty<T> implements ReadableHorizonProperty<T>, WritableHorizonProperty<T> {
     /**
-     * Creates a CachedReadableHorizonProperty instance.
-     * @param getter - The function that returns the property value.
+     * Sets the property value.
+     * @remarks There's no guarantee that this is a synchronous operation.
+     * @param value - The property value to set.
      */
-    constructor(getter: () => T);
+    set(value: T): void;
     /**
-     * Gets the property value. Calls are cached per frame.
-     *
-     * @remarks
-     * Mutating the state snapshot doesn't change the underlying value.
-     * You must call {@link set} set to do this.
-     *
+     * Gets the property value. Calls may be cached per frame.
+     * @remarks Mutating the state snapshot doesn't change the underlying value. You must call {@link set} to do this.
      * @returns The current value of the property.
      */
     get(): T;
@@ -199,37 +194,38 @@ export declare class CachedReadableHorizonProperty<T> implements ReadableHorizon
  * ({@link Vec3}, {@link Quaternion}, {@link Color}), use the
  * {@link HorizonReferenceProperty} class.
  */
-export declare class HorizonProperty<T> extends CachedReadableHorizonProperty<T> implements WritableHorizonProperty<T> {
-    private setter;
+export declare class HorizonProperty<T> extends BaseHorizonProperty<T> {
     /**
      * Creates a HorizonProperty instance.
+     *
      * @param getter - The function that returns the property value.
      * @param setter - The function that sets the property value.
      */
     constructor(getter: () => T, setter: (value: T) => void);
-    /**
-     * Sets the property value.
-     * @remarks There's no guarantee that this is a synchronous operation.
-     * @param value - The property value to set.
-     */
-    set(value: T): void;
 }
 /**
- * A property of a reference type, such as a ({@link Vec3}, {@link Quaternion},
- * or {@link Color}) instance. Use this class for properties of reference types
- * that implement `copy` or `clone` methods to ensure the methods snapshot the
- * state of the copied or cloned object at the time of the method call.
+ * Represents a property of a reference type in Horizon Worlds, such as a ({@link Vec3}, {@link Quaternion},
+ * or {@link Color}) instance. Use this class for properties of reference types that implement `copy` or `clone`
+ * methods to ensure the methods snapshot the state of the copied or cloned object at the time of the method call.
  *
  * @remarks
- * When using the {@link HorizonProperty} class for reference types that
- * implement `copy` or `clone` methods, if a copied or cloned object is
- * modified after the method call but before the method is invoked
- * (this is due to method queueing), the target property is updated based on
- * the modified value instead of a snapshot of the value taken at the time of
- * the method call.
+ * For reads via {@link HorizonReferenceProperty.get}, the read will return a clone of the object that may be mutated without mutating the cached value.
+ * For writes via {@link HorizonReferenceProperty.set}, the write will snapshot the state of the copied or cloned object at the time of the method call.
+ * When using the {@link BatchedCachedWritableHorizonProperty} class for reference types that implement
+ * `copy` or `clone` methods, if a copied or cloned object is modified after the set() call but before
+ * the setter() is invoked (with {@link VmConfigFlag.BatchSettersEnabled}, due to method queueing), the target
+ * property is updated based on the modified value instead of a snapshot of the value taken at the time of
+ * the method call. This class solves this issue by snapshotting the value at method call time if
+ * {@link VmConfigFlag.CaptureReferenceStateOnPropertySet} is set.
  */
-export declare class HorizonReferenceProperty<T extends Copyable<T>> extends HorizonProperty<T> {
-    set(value: T): void;
+export declare class HorizonReferenceProperty<T extends Copyable<T>> extends BaseHorizonProperty<T> {
+    /**
+     * Creates a HorizonReferenceProperty instance.
+     *
+     * @param getter - The function that returns the property value.
+     * @param setter - The function that sets the property value.
+     */
+    constructor(getter: () => T, setter: (value: T) => void);
 }
 declare class HorizonSetProperty<T> implements Iterable<T>, ReadableHorizonProperty<T[]>, WritableHorizonProperty<T[]> {
     constructor(getter: () => T[], setter: (value: T[]) => void);
@@ -2236,6 +2232,21 @@ export declare type PlayerRaycastHit = BaseRaycastHit & {
  */
 export declare type RaycastHit = StaticRaycastHit | EntityRaycastHit | PlayerRaycastHit;
 /**
+ * `layerType` - `Player`, `Objects`, or `Both`
+ *
+ * `maxDistance` - the maximum distance to send the raycast from the origin, from 0 (the origin) to 100 (farthest from the origin)
+ *
+ * `stopOnFirstHit` -
+ * if true, the raycast will stop on the first collision it meets, but will return a StaticHit if layer and tag don't match
+ * if false, the raycast will only find players/entities matching with the layer type and tag
+ * Note: tags are defined in the Gizmo, no tag means hit anything
+ */
+export declare type RaycastOptions = {
+    layerType?: LayerType;
+    maxDistance?: number;
+    stopOnFirstHit?: boolean;
+};
+/**
  * Represents a Raycast gizmo in the world.
  *
  * @remarks
@@ -2258,10 +2269,7 @@ export declare class RaycastGizmo extends Entity {
      *
      * @returns The collision information.
      */
-    raycast(origin: Vec3, direction: Vec3, options?: {
-        layerType?: LayerType;
-        maxDistance?: number;
-    }): RaycastHit | null;
+    raycast(origin: Vec3, direction: Vec3, options?: RaycastOptions): RaycastHit | null;
 }
 /**
  * Represents a dynamic lighting gizmo in the world, which provides lighting that's
