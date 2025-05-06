@@ -6,6 +6,7 @@ class CheckpointReached extends hz.Component<typeof CheckpointReached> {
   static propsDefinition = {
     soundFx: { type: hz.PropTypes.Entity, },
     checkpoint: { type: hz.PropTypes.Entity, },
+    particleFx: { type: hz.PropTypes.Entity, },
   };
 
   private playerCheckpoints: Map<number, hz.SpawnPointGizmo> = new Map();
@@ -27,6 +28,14 @@ class CheckpointReached extends hz.Component<typeof CheckpointReached> {
           fade: 0,
           players: [player],
         });
+      }
+      if(this.props.particleFx && this.props.checkpoint?.as(hz.SpawnPointGizmo).id !== this.playerCheckpoints.get(player.id)?.id) {
+        const particle = this.props.particleFx?.as(hz.ParticleGizmo);
+        if (particle) {
+          particle.play({ 
+            players: [player],
+          });
+        }
       }
       const checkpoint = this.props.checkpoint?.as(hz.SpawnPointGizmo)!;
       this.playerCheckpoints.set(player.id, checkpoint);
