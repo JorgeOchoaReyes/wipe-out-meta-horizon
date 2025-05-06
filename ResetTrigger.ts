@@ -5,6 +5,8 @@ class ResetTrigger extends hz.Component<typeof ResetTrigger> {
   static propsDefinition = {
     spawnPoint: { type: hz.PropTypes.Entity },
     deathSfx: { type: hz.PropTypes.Entity },
+    waterParticleFx: { type: hz.PropTypes.Entity },
+    splashSfx: { type: hz.PropTypes.Entity },
   };
 
   private playerCheckpoints: Map<number, hz.SpawnPointGizmo> = new Map();
@@ -28,6 +30,20 @@ class ResetTrigger extends hz.Component<typeof ResetTrigger> {
     }  
     try {
       const sound = this.props.deathSfx?.as(hz.AudioGizmo);
+      const particle = this.props.waterParticleFx?.as(hz.ParticleGizmo);
+      const splash = this.props.splashSfx?.as(hz.AudioGizmo);
+      if (splash) {
+        splash.play({
+          fade: 0,
+          players: [player],
+        });
+      }
+      if (particle) {
+        particle.position.set(player.position.get());
+        particle.play({
+          players: [player],
+        });
+      }
       if (sound) {
         sound.play({
           fade: 0,

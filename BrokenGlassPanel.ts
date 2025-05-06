@@ -14,6 +14,7 @@ class BrokenGlassPanel extends hz.Component<typeof BrokenGlassPanel> {
   panel!: hz.Entity;
   neighborPanel!: hz.Entity;
   parentId!: bigint;
+  timeoutToReset: number = 120;
 
   start() { 
     this.glassBreakSound = this.props.glassBreakSound!; 
@@ -21,8 +22,7 @@ class BrokenGlassPanel extends hz.Component<typeof BrokenGlassPanel> {
     this.neighborPanel = this.props.neighborPanel!; 
 
     this.shouldIBreak = Math.random() > 0.5;   
-    this.panel.collidable.set(this.shouldIBreak);
-    // this.panel.visible.set(this.shouldIBreak); // DEV ONLY
+    this.panel.collidable.set(this.shouldIBreak); 
 
     this.parentId = this.entity.parent.get()?.parent.get()?.parent?.get()?.id ?? (1 as unknown as bigint);
  
@@ -35,18 +35,27 @@ class BrokenGlassPanel extends hz.Component<typeof BrokenGlassPanel> {
     this.connectLocalBroadcastEvent(MyEvent, (data) => {
       if(data.name !== this.panel.name.get() && data.parentId === this.parentId) {
         this.shouldIBreak = !data.broken;
-        this.panel.collidable.set(!data.broken);
-        // this.panel.visible.set(!data.broken); // DEV ONLY
+        this.panel.collidable.set(!data.broken); 
       }  
     }); 
 
     this.connectCodeBlockEvent(this.entity, hz.CodeBlockEvents.OnPlayerEnterTrigger, (_p) => { 
       this.onPlayerLanded(this.shouldIBreak, _p);
     });
+
+    this.connectLocalBroadcastEvent(hz.World.onUpdate, (data) => {
+      if (this.timeoutToReset > 0) {
+        this.timeoutToReset -= data.deltaTime;
+      } else {
+        this.timeoutToReset = 120;
+        this.panel.visible.set(true);
+        this.glassBreakSound.as(hz.AudioGizmo)?.stop();
+      }
+    });
   } 
 
   onPlayerLanded(broken: boolean, player: hz.Player) {  
-    if(!broken) { 
+    if(!broken && this.panel.visible.get()) {   
       const glassSound = this.glassBreakSound!.as(hz.AudioGizmo)!;
       this.panel.visible.set(false);
       glassSound.play({
