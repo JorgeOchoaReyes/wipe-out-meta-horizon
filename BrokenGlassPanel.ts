@@ -7,6 +7,7 @@ class BrokenGlassPanel extends hz.Component<typeof BrokenGlassPanel> {
     glassBreakSound: { type: hz.PropTypes.Entity, default: null },  
     neighborPanel: { type: hz.PropTypes.Entity, default: null },
     panel: { type: hz.PropTypes.Entity, default: null },
+    particleFx: { type: hz.PropTypes.Entity, default: null },
   };
 
   shouldIBreak!: boolean;
@@ -15,11 +16,13 @@ class BrokenGlassPanel extends hz.Component<typeof BrokenGlassPanel> {
   neighborPanel!: hz.Entity;
   parentId!: bigint;
   timeoutToReset: number = 120;
+  particleFx!: hz.Entity;
 
   start() { 
     this.glassBreakSound = this.props.glassBreakSound!; 
     this.panel = this.props.panel!;
     this.neighborPanel = this.props.neighborPanel!; 
+    this.particleFx = this.props.particleFx!;
 
     this.shouldIBreak = Math.random() > 0.5;   
     this.panel.collidable.set(this.shouldIBreak); 
@@ -57,6 +60,12 @@ class BrokenGlassPanel extends hz.Component<typeof BrokenGlassPanel> {
   onPlayerLanded(broken: boolean, player: hz.Player) {  
     if(!broken && this.panel.visible.get()) {   
       const glassSound = this.glassBreakSound!.as(hz.AudioGizmo)!;
+      const particle = this.particleFx!.as(hz.ParticleGizmo);
+      if (particle) {
+        particle.play({
+          players: [player],
+        });
+      }
       this.panel.visible.set(false);
       glassSound.play({
         fade: 1,
