@@ -15,10 +15,12 @@ class CheckpointReached extends hz.Component<typeof CheckpointReached> {
     this.connectCodeBlockEvent(this.entity, hz.CodeBlockEvents.OnPlayerEnterTrigger, (player: hz.Player) => {
       this.onPlayerEnter(player);
     });
- 
-    this.connectLocalBroadcastEvent(setPlayerCheckpoints, (data) => {
+    this.connectLocalBroadcastEvent(playerCheckpoints, (data) => { 
       this.playerCheckpoints = data;
     });
+    this.connectLocalBroadcastEvent(setPlayerCheckpoints, (data) => { 
+      this.playerCheckpoints = data;
+    }); 
   }
   onPlayerEnter(player: hz.Player) { 
     if (this.props.checkpoint) {

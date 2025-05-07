@@ -18,10 +18,19 @@ class GameManager extends hz.Component<typeof GameManager> {
     this.connectCodeBlockEvent(this.entity, hz.CodeBlockEvents.OnPlayerEnterWorld, (player: hz.Player) => {
       this.setPlayerCheckpoint(player, this.props.checkpoint1?.as(hz.SpawnPointGizmo)!);
     });  
+    
+    this.connectCodeBlockEvent(this.entity, hz.CodeBlockEvents.OnPlayerExitWorld, (player: hz.Player) => {
+      this.deletePlayerCheckpoint(player);
+    });  
   }
 
   setPlayerCheckpoint(player: hz.Player, checkpoint: hz.SpawnPointGizmo) { 
     this.playerCheckpoints.set(player.id, checkpoint); 
+    this.sendLocalBroadcastEvent(playerCheckpoints, this.playerCheckpoints);
+  }
+
+  deletePlayerCheckpoint(player: hz.Player) {
+    if(this.playerCheckpoints.has(player.id)) this.playerCheckpoints.delete(player.id);
     this.sendLocalBroadcastEvent(playerCheckpoints, this.playerCheckpoints);
   }
   

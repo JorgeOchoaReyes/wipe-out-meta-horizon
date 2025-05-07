@@ -14,7 +14,10 @@ class PlayerGameReset extends hz.Component<typeof PlayerGameReset> {
       this.onPlayerEnter(player);
     });
  
-    this.connectLocalBroadcastEvent(setPlayerCheckpoints, (data) => {
+    this.connectLocalBroadcastEvent(playerCheckpoints, (data) => { 
+      this.playerCheckpoints = data;
+    });
+    this.connectLocalBroadcastEvent(setPlayerCheckpoints, (data) => { 
       this.playerCheckpoints = data;
     });
   }
